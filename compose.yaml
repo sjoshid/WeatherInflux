@@ -1,6 +1,117 @@
 version: '3'
-
 services:
+  broker-1:
+    image: confluentinc/cp-kafka:7.6.0
+    hostname: broker-1
+    container_name: broker-1
+    networks:
+      kafka-net:
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://broker-1:29092,EXTERNAL://localhost:9092"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      # When broker and controller are on same node, Confluent calls this combined mode.
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@broker-1:29093,2@broker-2:29093,3@broker-3:29093"
+      KAFKA_LISTENERS: "INTERNAL://broker-1:29092,EXTERNAL://broker-1:9092,CONTROLLER://broker-1:29093"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_LOG_DIRS: "/tmp/kraft-combined-logs"
+      # Replace CLUSTER_ID with a unique base64 UUID using "bin/kafka-storage.sh random-uuid"
+      # See https://docs.confluent.io/kafka/operations-tools/kafka-tools.html#kafka-storage-sh
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+      BOOTS: "--bootstrap-server=broker-1:29092,broker-2:29092,broker-3:29092"
+
+  broker-2:
+    image: confluentinc/cp-kafka:7.6.0
+    hostname: broker-2
+    container_name: broker-2
+    networks:
+      kafka-net:
+    ports:
+      - "9093:9092"
+      - "9103:9101"
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://broker-2:29092,EXTERNAL://localhost:9093"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      # When broker and controller are on same node, Confluent calls this combined mode.
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@broker-1:29093,2@broker-2:29093,3@broker-3:29093"
+      KAFKA_LISTENERS: "INTERNAL://broker-2:29092,EXTERNAL://broker-2:9092,CONTROLLER://broker-2:29093"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_LOG_DIRS: "/tmp/kraft-combined-logs"
+      # Replace CLUSTER_ID with a unique base64 UUID using "bin/kafka-storage.sh random-uuid"
+      # See https://docs.confluent.io/kafka/operations-tools/kafka-tools.html#kafka-storage-sh
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+      BOOTS: "--bootstrap-server=broker-1:29092,broker-2:29092,broker-3:29092"
+
+  broker-3:
+    image: confluentinc/cp-kafka:7.6.0
+    hostname: broker-3
+    container_name: broker-3
+    networks:
+      kafka-net:
+    ports:
+      - "9094:9092"
+      - "9104:9101"
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://broker-3:29092,EXTERNAL://localhost:9094"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      # When broker and controller are on same node, Confluent calls this combined mode.
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@broker-1:29093,2@broker-2:29093,3@broker-3:29093"
+      KAFKA_LISTENERS: "INTERNAL://broker-3:29092,EXTERNAL://broker-3:9092,CONTROLLER://broker-3:29093"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_LOG_DIRS: "/tmp/kraft-combined-logs"
+      # Replace CLUSTER_ID with a unique base64 UUID using "bin/kafka-storage.sh random-uuid"
+      # See https://docs.confluent.io/kafka/operations-tools/kafka-tools.html#kafka-storage-sh
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+      BOOTS: "--bootstrap-server=broker-1:29092,broker-2:29092,broker-3:29092"
+
+  kafbat-ui:
+    container_name: kafbat-ui
+    image: ghcr.io/kafbat/kafka-ui:latest
+    ports:
+      - "9090:8080"
+    networks:
+      kafka-net:
+    depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+    environment:
+      KAFKA_CLUSTERS_0_NAME: my_kafka_cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker-1:29092,broker-2:29092,broker-3:29092
+      KAFKA_CLUSTERS_0_METRICS_PORT: 9101
+      DYNAMIC_CONFIG_ENABLED: 'true'  # not necessary, added for tests
+      KAFKA_CLUSTERS_0_AUDIT_TOPICAUDITENABLED: 'true'
+      KAFKA_CLUSTERS_0_AUDIT_CONSOLEAUDITENABLED: 'true'
+
   influxdb:
     image: influxdb:2.7.4-alpine
     #        env_file:
@@ -13,9 +124,41 @@ services:
     networks:
       - my-influx-network
 
+  flink-jobmanager:
+    image: flink:1.19.0-java17
+    container_name: flink-jobmanager
+    command: jobmanager
+    depends_on:
+      - kafbat-ui
+    networks:
+      kafka-net:
+    ports:
+      - "8081:8081"
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager   
+
+  flink-taskmanager:
+    image: flink:1.19.0-java17
+    container_name: flink-taskmanager
+    command: taskmanager
+    depends_on:
+      - kafbat-ui
+    networks:
+      kafka-net:
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 2
+
 volumes:
   influx-store:
+  kafka-store:
+    external: true
 
 networks:
   my-influx-network:
     driver: bridge
+  kafka-net:
