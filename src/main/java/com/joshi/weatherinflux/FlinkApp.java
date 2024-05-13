@@ -104,6 +104,6 @@ public class FlinkApp {
 
     enrichedCPUMetricsInfluxPoint.addSink(new InfluxDBSink(influxDBConfig)).name("Influx Sink");
 
-    env.execute("With cdc v 3.0.0");
+    env.execute("CPU Util");
   }
 }
