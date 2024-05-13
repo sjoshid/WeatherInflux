@@ -26,7 +26,7 @@ public class FlinkApp {
           .schema(
               Schema.newBuilder()
                   .column("nms_region", DataTypes.SMALLINT().notNull())
-                  .column("nms_perf_key", DataTypes.STRING().notNull())
+                  .column("perf_key", DataTypes.STRING().notNull())
                   .column("nms_device_id", DataTypes.STRING().notNull())
                   .column("nms_device_name", DataTypes.STRING().notNull())
                   .column("nms_instance_description", DataTypes.STRING().notNull())
@@ -34,7 +34,7 @@ public class FlinkApp {
                   .column("nms_ds1_description", DataTypes.STRING().notNull())
                   .column("inv_acna", DataTypes.STRING().notNull())
                   .columnByExpression("t_proctime", "PROCTIME()")
-                  .primaryKey("nms_region", "nms_perf_key")
+                  .primaryKey("nms_region", "nms_device_id")
                   .build())
           .option("hostname", "mm-mariadb-for-auto-metrics")
           .option("port", "3306")
@@ -80,8 +80,7 @@ public class FlinkApp {
     DataStream<Row> cpuUtilCDCStream =
         tableEnv
             .toChangelogStream(tableEnv.from(CPU_UTIL_DETAILS))
-            .keyBy(r -> Objects.requireNonNull(r.getField("nms_perf_key")).toString());
-    tableEnv.createTemporaryView("hello", cpuUtilCDCStream);
+            .keyBy(r -> Objects.requireNonNull(r.getField("perf_key")).toString());
 
     // IMPORTANT: Both streams must have same keys for them to go to same slot on task manager.
     DataStream<InfluxDBPoint> enrichedCPUMetricsInfluxPoint =
