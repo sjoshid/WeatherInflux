@@ -19,7 +19,7 @@ import org.apache.flink.table.api.TableDescriptor;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
-public class FlinkApp {
+public class CPUUtilStreaming {
 
   public static final TableDescriptor CPU_UTIL_DETAILS =
       TableDescriptor.forConnector("mysql-cdc")
