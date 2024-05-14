@@ -11,10 +11,10 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DeviceEnrichment
+public class EnrichCPUUtil
     extends KeyedCoProcessFunction<String, CPUMetric, Row, EnrichedCPUMetric> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(DeviceEnrichment.class);
+  private static final Logger LOG = LoggerFactory.getLogger(EnrichCPUUtil.class);
   private transient ValueState<Row> cdcRow;
   private ValueState<EnrichedCPUMetric> prev;
 
@@ -41,6 +41,7 @@ public class DeviceEnrichment
           LOG.error("Found a gap for id {}", value.getId());
         }
       }
+      // sj_todo maybe it's better to split the gap finding and enriching metric part?
       prev.update(enriched);
       out.collect(enriched);
     } else {

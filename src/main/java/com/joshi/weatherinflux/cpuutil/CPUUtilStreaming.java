@@ -27,7 +27,7 @@ public class CPUUtilStreaming {
               Schema.newBuilder()
                   .column("nms_region", DataTypes.SMALLINT().notNull())
                   .column("id", DataTypes.STRING().notNull())
-                  .column("nms_device_id", DataTypes.STRING().notNull())
+                  .column("device_id", DataTypes.STRING().notNull())
                   .column("nms_device_name", DataTypes.STRING().notNull())
                   .column("nms_instance_description", DataTypes.STRING().notNull())
                   .column("nms_ds0_description", DataTypes.STRING().notNull())
@@ -42,7 +42,7 @@ public class CPUUtilStreaming {
           .option("username", "boss")
           .option("password", "IMBOSS")
           .option("database-name", "Netreo")
-          .option("table-name", "cpu_util_details")
+          .option("table-name", "cpu_util_cdc_details")
           .option("server-id", "5800-5900")
           .option("heartbeat.interval", "1s")
           .build();
@@ -81,18 +81,18 @@ public class CPUUtilStreaming {
     DataStream<Row> cpuUtilCDCStream =
         tableEnv
             .toChangelogStream(tableEnv.from(CPU_UTIL_DETAILS))
-            .keyBy(r -> Objects.requireNonNull(r.getField("id")).toString());
+            .keyBy(r -> Objects.requireNonNull(r.getField("device_id")).toString());
 
     // IMPORTANT: Both streams must have same keys for them to go to same slot on task manager.
-    DataStream<InfluxDBPoint> enrichedCPUMetricsInfluxPoint =
+    DataStream<InfluxDBPoint> influxStream =
         ks.connect(cpuUtilCDCStream)
-            .process(new DeviceEnrichment())
+            .process(new EnrichCPUUtil())
             .map(
                 new RichMapFunction<>() {
                   @Override
                   public InfluxDBPoint map(EnrichedCPUMetric value) throws Exception {
                     Map<String, String> tags = new HashMap<>();
-                    tags.put("perf_key", value.getCpuMetric().getId());
+                    tags.put("id", value.getCpuMetric().getId());
                     Map<String, Object> fields = new HashMap<>();
                     fields.put("util", value.getCpuMetric().getTemp());
                     InfluxDBPoint point =
@@ -102,7 +102,7 @@ public class CPUUtilStreaming {
                   }
                 });
 
-    enrichedCPUMetricsInfluxPoint.addSink(new InfluxDBSink(influxDBConfig)).name("Influx Sink");
+    influxStream.addSink(new InfluxDBSink(influxDBConfig)).name("Influx Sink");
 
     env.execute("CPU Util");
   }
