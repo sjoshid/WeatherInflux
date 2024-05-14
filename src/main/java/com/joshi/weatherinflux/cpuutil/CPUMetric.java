@@ -1,4 +1,4 @@
-package com.joshi.weatherinflux;
+package com.joshi.weatherinflux.cpuutil;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;

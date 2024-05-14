@@ -1,4 +1,4 @@
-package com.joshi.weatherinflux;
+package com.joshi.weatherinflux.cpuutil;
 
 import java.time.Duration;
 import java.time.Instant;

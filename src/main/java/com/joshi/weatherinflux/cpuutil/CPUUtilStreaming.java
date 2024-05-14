@@ -1,4 +1,4 @@
-package com.joshi.weatherinflux;
+package com.joshi.weatherinflux.cpuutil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,15 +26,16 @@ public class CPUUtilStreaming {
           .schema(
               Schema.newBuilder()
                   .column("nms_region", DataTypes.SMALLINT().notNull())
-                  .column("perf_key", DataTypes.STRING().notNull())
+                  .column("id", DataTypes.STRING().notNull())
                   .column("nms_device_id", DataTypes.STRING().notNull())
                   .column("nms_device_name", DataTypes.STRING().notNull())
                   .column("nms_instance_description", DataTypes.STRING().notNull())
                   .column("nms_ds0_description", DataTypes.STRING().notNull())
-                  .column("nms_ds1_description", DataTypes.STRING().notNull())
+                  // ds1 is not needed for cpu util
+                  // .column("nms_ds1_description", DataTypes.STRING().nullable())
                   .column("inv_acna", DataTypes.STRING().notNull())
                   .columnByExpression("t_proctime", "PROCTIME()")
-                  .primaryKey("nms_region", "nms_device_id")
+                  .primaryKey("id")
                   .build())
           .option("hostname", "mm-mariadb-for-auto-metrics")
           .option("port", "3306")
@@ -80,7 +81,7 @@ public class CPUUtilStreaming {
     DataStream<Row> cpuUtilCDCStream =
         tableEnv
             .toChangelogStream(tableEnv.from(CPU_UTIL_DETAILS))
-            .keyBy(r -> Objects.requireNonNull(r.getField("perf_key")).toString());
+            .keyBy(r -> Objects.requireNonNull(r.getField("id")).toString());
 
     // IMPORTANT: Both streams must have same keys for them to go to same slot on task manager.
     DataStream<InfluxDBPoint> enrichedCPUMetricsInfluxPoint =

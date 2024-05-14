@@ -1,4 +1,4 @@
-package com.joshi.weatherinflux;
+package com.joshi.weatherinflux.cpuutil;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
