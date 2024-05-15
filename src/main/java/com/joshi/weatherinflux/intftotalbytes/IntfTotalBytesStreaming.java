@@ -88,7 +88,7 @@ public class IntfTotalBytesStreaming {
                     Objects.requireNonNull(r.getField("intf_id")).toString()
                   };
 
-                  return String.join("-", id);
+                  return String.join("_", id);
                 });
 
     // IMPORTANT: Both streams must have same keys for them to go to same slot on task manager.

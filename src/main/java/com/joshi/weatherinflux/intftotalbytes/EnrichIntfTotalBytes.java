@@ -61,13 +61,13 @@ public class EnrichIntfTotalBytes
           float totalBytes = value.getInBytes() + value.getOutBytes();
           float maxBps = totalBytes / dur.toSeconds();
           enriched.setMaxBps(maxBps);
+          out.collect(enriched);
         } else {
           LOG.warn("Not possible for prev poll time to be >= curr poll time.");
         }
       }
       // sj_todo maybe it's better to split the gap finding and enriching metric part?
       prev.update(enriched);
-      out.collect(enriched);
     } else {
       LOG.info("Metrics {} dropped because no perf data found for it", value);
     }
