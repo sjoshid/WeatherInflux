@@ -42,7 +42,6 @@ public class IntfTotalBytesStreaming {
           .option("password", "IMBOSS")
           .option("database-name", "Netreo")
           .option("table-name", "intf_total_bytes_cdc_details")
-          .option("server-id", "5800-5900")
           .option("heartbeat.interval", "1s")
           .build();
 
