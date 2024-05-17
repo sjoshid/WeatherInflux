@@ -1,5 +1,6 @@
 package com.joshi.weatherinflux.cpuutil;
 
+import com.joshi.weatherinflux.common.EnrichedMetric;
 import com.joshi.weatherinflux.common.Metric;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,6 @@ public class CPUMetric implements Metric<String> {
 
   @Override
   public String getKey() {
-    return null;
+    return id;
   }
 }
