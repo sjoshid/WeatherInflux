@@ -1,31 +1,42 @@
 package com.joshi.weatherinflux.cpuutil;
 
+import com.joshi.weatherinflux.common.CPUUtilCDCRow;
 import java.time.Duration;
 import java.time.Instant;
 import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction;
-import org.apache.flink.types.Row;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EnrichCPUUtil
-    extends KeyedCoProcessFunction<String, CPUMetric, Row, EnrichedCPUMetric> {
+    extends KeyedCoProcessFunction<String, CPUMetric, CPUUtilCDCRow, EnrichedCPUMetric> {
 
   private static final Logger LOG = LoggerFactory.getLogger(EnrichCPUUtil.class);
-  private transient ValueState<Row> cdcRow;
+  private transient ValueState<CPUUtilCDCRow> cdcRow;
   private ValueState<EnrichedCPUMetric> prev;
+
+  @Override
+  public void open(OpenContext openContext) throws Exception {
+    cdcRow =
+        getRuntimeContext()
+            .getState(new ValueStateDescriptor<>("perfCDCData", CPUUtilCDCRow.class));
+    prev =
+        getRuntimeContext()
+            .getState(
+                new ValueStateDescriptor<>("Enriched CPU Util state", EnrichedCPUMetric.class));
+  }
 
   @Override
   public void processElement1(
       CPUMetric value,
-      KeyedCoProcessFunction<String, CPUMetric, Row, EnrichedCPUMetric>.Context ctx,
+      KeyedCoProcessFunction<String, CPUMetric, CPUUtilCDCRow, EnrichedCPUMetric>.Context ctx,
       Collector<EnrichedCPUMetric> out)
       throws Exception {
-    Row detail = cdcRow.value();
-    if (detail != null) {
+    // sj_todo why are we doing this check?
+    if (cdcRow.value() != null) {
       // Output the enriched metric with inventory details.
       EnrichedCPUMetric enriched = new EnrichedCPUMetric(value);
       EnrichedCPUMetric previousEnriched = prev.value();
@@ -51,11 +62,11 @@ public class EnrichCPUUtil
 
   @Override
   public void processElement2(
-      Row value,
-      KeyedCoProcessFunction<String, CPUMetric, Row, EnrichedCPUMetric>.Context ctx,
+      CPUUtilCDCRow value,
+      KeyedCoProcessFunction<String, CPUMetric, CPUUtilCDCRow, EnrichedCPUMetric>.Context ctx,
       Collector<EnrichedCPUMetric> out)
       throws Exception {
-    switch (value.getKind()) {
+    switch (value.getRowKind()) {
       case UPDATE_AFTER, INSERT -> {
         LOG.info("update/insert metric {}", value);
         cdcRow.update(value);
@@ -68,14 +79,5 @@ public class EnrichCPUUtil
         LOG.info("Ignored cdc row UPDATE_BEFORE");
       }
     }
-  }
-
-  @Override
-  public void open(OpenContext openContext) throws Exception {
-    cdcRow = getRuntimeContext().getState(new ValueStateDescriptor<>("perfCDCData", Row.class));
-    prev =
-        getRuntimeContext()
-            .getState(
-                new ValueStateDescriptor<>("Enriched CPU Util state", EnrichedCPUMetric.class));
   }
 }
