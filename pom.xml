@@ -16,7 +16,7 @@
                 <transformer
                   implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <!-- Replace this with the main class of your job -->
-                  <mainClass>com.joshi.weatherinflux.cpuutil.CPUUtilStreaming</mainClass>
+                  <mainClass>com.joshi.weatherinflux.cpuutil.Main</mainClass>
                 </transformer>
                 <transformer
                   implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
@@ -35,7 +35,7 @@
                 <transformer
                   implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <!-- Replace this with the main class of your job -->
-                  <mainClass>com.joshi.weatherinflux.intftotalbytes.IntfTotalBytesStreaming
+                  <mainClass>com.joshi.weatherinflux.intftotalbytes.Main
                   </mainClass>
                 </transformer>
                 <transformer
