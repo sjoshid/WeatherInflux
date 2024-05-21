@@ -34,14 +34,14 @@ public class IntfTotalBytesStreaming {
             // sharding.
             .keyBy(IntfTotalBytesMetric::getId);
 
-    DataStream<Row> cpuUtilCDCStream =
+    DataStream<Row> cdcStream =
         tableEnv
             .toChangelogStream(tableEnv.from(CDCSources.TOTAL_BYTES_CDC))
             .keyBy(r -> Objects.requireNonNull(r.getField("intf_id")).toString());
 
     // IMPORTANT: Both streams must have same keys for them to go to same slot on task manager.
     DataStream<InfluxDBPoint> influxStream =
-        ks.connect(cpuUtilCDCStream)
+        ks.connect(cdcStream)
             .process(new EnrichIntfTotalBytes())
             .map(
                 new RichMapFunction<>() {
