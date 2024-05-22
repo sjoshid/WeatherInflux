@@ -5,7 +5,50 @@ import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.api.TableDescriptor;
 
 public class CDCSources {
-  public static final TableDescriptor CPU_UTIL_DETAILS =
+  public static final TableDescriptor DEVICE_CDC_DETAILS =
+      TableDescriptor.forConnector("mysql-cdc")
+          .schema(
+              Schema.newBuilder()
+                  .column("id", DataTypes.STRING().notNull())
+                  .column("nms_region", DataTypes.SMALLINT().notNull())
+                  .column("nms_device_id", DataTypes.INT().notNull())
+                  .column("inv_device_name", DataTypes.STRING().notNull())
+                  .column("inv_acna", DataTypes.STRING().notNull())
+                  .column("inv_sponsored_by", DataTypes.STRING().notNull())
+                  .columnByExpression("t_proctime", "PROCTIME()")
+                  .primaryKey("id")
+                  .build())
+          .option("hostname", "mm-mariadb-for-auto-metrics")
+          .option("port", "3306")
+          .option("username", "boss")
+          .option("password", "IMBOSS")
+          .option("database-name", "Netreo")
+          .option("table-name", "device")
+          .option("heartbeat.interval", "1s")
+          .build();
+
+  public static final TableDescriptor INTERFACE_CDC_DETAILS =
+      TableDescriptor.forConnector("mysql-cdc")
+          .schema(
+              Schema.newBuilder()
+                  .column("id", DataTypes.STRING().notNull())
+                  .column("nms_region", DataTypes.SMALLINT().notNull())
+                  .column("device_id", DataTypes.STRING().notNull())
+                  .column("nms_description", DataTypes.STRING().notNull())
+                  .column("nms_interface_id", DataTypes.INT().notNull())
+                  .columnByExpression("t_proctime", "PROCTIME()")
+                  .primaryKey("id")
+                  .build())
+          .option("hostname", "mm-mariadb-for-auto-metrics")
+          .option("port", "3306")
+          .option("username", "boss")
+          .option("password", "IMBOSS")
+          .option("database-name", "Netreo")
+          .option("table-name", "interface")
+          .option("heartbeat.interval", "1s")
+          .build();
+
+  public static final TableDescriptor CPU_UTIL_DETAILS_is_not_needed =
       TableDescriptor.forConnector("mysql-cdc")
           .schema(
               Schema.newBuilder()
@@ -30,7 +73,7 @@ public class CDCSources {
           .option("heartbeat.interval", "1s")
           .build();
 
-  public static final TableDescriptor TOTAL_BYTES_CDC =
+  public static final TableDescriptor TOTAL_BYTES_CDC_is_not_needed =
       TableDescriptor.forConnector("mysql-cdc")
           .schema(
               Schema.newBuilder()

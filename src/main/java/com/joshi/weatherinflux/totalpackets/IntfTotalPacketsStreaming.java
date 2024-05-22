@@ -1,4 +1,4 @@
-package com.joshi.weatherinflux.intftotalbytes;
+package com.joshi.weatherinflux.totalpackets;
 
 import com.joshi.weatherinflux.common.CDCSources;
 import com.joshi.weatherinflux.common.InfluxSink;
@@ -9,13 +9,14 @@ import java.util.Objects;
 import java.util.UUID;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.influxdb.InfluxDBPoint;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
-public class IntfTotalBytesStreaming {
+public class IntfTotalPacketsStreaming {
   public static void main(String[] args) throws Exception {
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     env.setParallelism(3);
@@ -25,39 +26,52 @@ public class IntfTotalBytesStreaming {
     // parallelism of 1.
     tableEnv.getConfig().set("table.exec.resource.default-parallelism", "1");
 
-    DataStream<IntfTotalBytesMetric> ks =
+    // timestamp is part of key because we want metric collected at same timestamp for same intf. id
+    DataStream<IntfPacketsMetric> unicastSource =
         env.fromSource(
-                KafkaSources.totalBytesMetricKafkaSource,
+                KafkaSources.unicastMetricKafkaSource,
                 WatermarkStrategy.noWatermarks(),
-                "Intf Total bytes totalBytesMetricKafkaSource")
-            // keyBy will LOGICALLY split the stream based the key. Records with same key are
-            // forwarded to same slot on task manager. This forwarding ensures correct state
-            // sharding.
-            .keyBy(IntfTotalBytesMetric::getId);
+                "UnicastMetric Kafka source")
+            .uid(UUID.randomUUID().toString());
+
+    DataStream<IntfPacketsMetric> multicastSource =
+        env.fromSource(
+                KafkaSources.multicastMetricKafkaSource,
+                WatermarkStrategy.noWatermarks(),
+                "MulticastMetric Kafka source")
+            .uid(UUID.randomUUID().toString());
+
+    DataStream<IntfPacketsMetric> broadcastSource =
+        env.fromSource(
+                KafkaSources.broadcastMetricKafkaSource,
+                WatermarkStrategy.noWatermarks(),
+                "BroadcastMetric Kafka source")
+            .uid(UUID.randomUUID().toString());
 
     DataStream<Row> cdcStream =
         tableEnv
             .toChangelogStream(tableEnv.from(CDCSources.INTERFACE_CDC_DETAILS))
             .keyBy(r -> Objects.requireNonNull(r.getField("id")).toString());
 
-    // IMPORTANT: Both streams must have same keys for them to go to same slot on task manager.
     DataStream<InfluxDBPoint> influxStream =
-        ks.connect(cdcStream)
-            .process(new EnrichIntfTotalBytes())
+        unicastSource
+            .union(multicastSource, broadcastSource)
+            .keyBy(r -> new Tuple2<>(r.getId(), r.getTimestamp()))
+            .process(new CalculateTotalPacketsProcessFunction())
+            .keyBy(EnrichedIntfTotalPacketsMetric::getId)
+            .connect(cdcStream)
+            .process(new EnrichIntfPacketsMetrics())
             .map(
                 new RichMapFunction<>() {
                   @Override
-                  public InfluxDBPoint map(EnrichedIntfTotalBytesMetric value) throws Exception {
+                  public InfluxDBPoint map(EnrichedIntfTotalPacketsMetric value) throws Exception {
                     Map<String, String> tags = new HashMap<>();
-                    tags.put("id", value.getIntfTotalBytesMetric().getId());
+                    tags.put("id", value.getId());
                     Map<String, Object> fields = new HashMap<>();
-                    fields.put("maxBps", value.getMaxBps());
+                    fields.put("inTotalPackets", value.getInTotalPackets());
+                    fields.put("outTotalPackets", value.getOutTotalPackets());
                     InfluxDBPoint point =
-                        new InfluxDBPoint(
-                            "interface",
-                            value.getIntfTotalBytesMetric().getTimestamp(),
-                            tags,
-                            fields);
+                        new InfluxDBPoint("interface", value.getTimestamp(), tags, fields);
                     return point;
                   }
                 });
@@ -67,6 +81,6 @@ public class IntfTotalBytesStreaming {
         .name("Influx Sink")
         .uid(UUID.randomUUID().toString());
 
-    env.execute("Intf Total Bytes");
+    env.execute("Intf Total Packets");
   }
 }

@@ -11,9 +11,6 @@ import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.influxdb.InfluxDBPoint;
-import org.apache.flink.table.api.DataTypes;
-import org.apache.flink.table.api.Schema;
-import org.apache.flink.table.api.TableDescriptor;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
@@ -40,8 +37,8 @@ public class CPUUtilStreaming {
 
     DataStream<Row> cpuUtilCDCStream =
         tableEnv
-            .toChangelogStream(tableEnv.from(CDCSources.CPU_UTIL_DETAILS))
-            .keyBy(r -> Objects.requireNonNull(r.getField("device_id")).toString());
+            .toChangelogStream(tableEnv.from(CDCSources.DEVICE_CDC_DETAILS))
+            .keyBy(r -> Objects.requireNonNull(r.getField("id")).toString());
 
     // IMPORTANT: Both streams must have same keys for them to go to same slot on task manager.
     DataStream<InfluxDBPoint> influxStream =
