@@ -65,9 +65,11 @@ public class IntfTotalPacketsStreaming {
                   }
                 })
             .process(new CalculateTotalPacketsProcessFunction())
+            .setParallelism(3)
             .keyBy(EnrichedIntfTotalPacketsMetric::getId)
             .connect(cdcStream)
             .process(new EnrichIntfPacketsMetrics())
+            .setParallelism(3)
             .map(
                 new RichMapFunction<>() {
                   @Override
