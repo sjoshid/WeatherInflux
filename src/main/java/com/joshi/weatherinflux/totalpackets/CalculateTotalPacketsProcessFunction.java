@@ -31,9 +31,6 @@ class CalculateTotalPacketsProcessFunction
         getRuntimeContext()
             .getState(new ValueStateDescriptor<>("Current out-total value", Float.class));
     timer = getRuntimeContext().getState(new ValueStateDescriptor<>("Time to wait", Long.class));
-    mask.update(0x000);
-    currInTotal.update(.0f);
-    currOutTotal.update(.0f);
   }
 
   @Override
@@ -44,7 +41,12 @@ class CalculateTotalPacketsProcessFunction
           ctx,
       Collector<EnrichedIntfTotalPacketsMetric> out)
       throws Exception {
-    int before = mask.value();
+    Integer before = mask.value();
+    if (before == null) {
+      before = 0x000;
+      mask.update(before);
+    }
+
     final int after = value.getType().getValue() | before;
     if (after == before) {
       // huh?
@@ -54,7 +56,7 @@ class CalculateTotalPacketsProcessFunction
     } else if (after == 0x111) {
       // found all three. Add all up.
       float inTotalFinal = currInTotal.value() + value.getInPackets();
-      float outTotalFinal = currOutTotal.value() + value.getInPackets();
+      float outTotalFinal = currOutTotal.value() + value.getOutPackets();
 
       out.collect(
           new EnrichedIntfTotalPacketsMetric(
@@ -67,17 +69,30 @@ class CalculateTotalPacketsProcessFunction
 
       ctx.timerService().deleteProcessingTimeTimer(timer.value());
       timer.clear();
+      LOG.info("Cleared timer. Received unicast, multicast and broadcast within 10 secs.");
     } else {
       // More to come.
-      currInTotal.update(currInTotal.value() + value.getInPackets());
-      currOutTotal.update(currOutTotal.value() + value.getInPackets());
+      if (currInTotal.value() == null) {
+        currInTotal.update(value.getInPackets());
+        currOutTotal.update(value.getOutPackets());
+      } else {
+        currInTotal.update(currInTotal.value() + value.getInPackets());
+        currOutTotal.update(currOutTotal.value() + value.getOutPackets());
+      }
+
       mask.update(after);
 
-      // sj_todo change this.
-      long futureTime = ctx.timerService().currentProcessingTime() + 10_000;
+      if (timer.value() == null) {
+        // sj_todo change this.
+        long futureTime = ctx.timerService().currentProcessingTime() + 10_000;
 
-      timer.update(futureTime);
-      ctx.timerService().registerProcessingTimeTimer(futureTime);
+        timer.update(futureTime);
+        ctx.timerService().registerProcessingTimeTimer(futureTime);
+      }
+
+      LOG.info(
+          "Current mask {}. Unicast is 0x001, multicast is 0x010 and broadcast is 0x100.",
+          mask.value());
     }
   }
 

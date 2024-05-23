@@ -39,16 +39,20 @@ public class EnrichIntfPacketsMetrics
       throws Exception {
     EnrichedIntfTotalPacketsMetric prevMetric = prev.value();
     if (prevMetric == null) {
-      // sj_todo make sure you enrich before updating.
+      // sj_todo make sure you enrich using cdc before updating.
       prev.update(value);
+      LOG.info("First total packet metric {} which will NOT be created in Influx.", value);
     } else {
       // sj_todo is it a good idea to create new object here?
       EnrichedIntfTotalPacketsMetric newMetric =
           new EnrichedIntfTotalPacketsMetric(
-              prevMetric.getId(),
-              prevMetric.getTimestamp(),
+              value.getId(),
+              value.getTimestamp(),
+              // IMPORTANT: Total packets is a counter that our current NMS provides.
+              // Pray that the diff is positive.
               value.getInTotalPackets() - prevMetric.getInTotalPackets(),
               value.getOutTotalPackets() - prevMetric.getOutTotalPackets());
+      LOG.info("Collected total packet metric {} for influx", newMetric);
       out.collect(newMetric);
       prev.update(newMetric);
     }

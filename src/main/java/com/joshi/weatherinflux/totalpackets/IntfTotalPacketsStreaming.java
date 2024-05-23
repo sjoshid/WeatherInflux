@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.UUID;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -56,7 +57,13 @@ public class IntfTotalPacketsStreaming {
     DataStream<InfluxDBPoint> influxStream =
         unicastSource
             .union(multicastSource, broadcastSource)
-            .keyBy(r -> new Tuple2<>(r.getId(), r.getTimestamp()))
+            .keyBy(
+                new KeySelector<IntfPacketsMetric, Tuple2<String, Long>>() {
+                  @Override
+                  public Tuple2<String, Long> getKey(IntfPacketsMetric value) throws Exception {
+                    return new Tuple2<String, Long>(value.getId(), value.getTimestamp());
+                  }
+                })
             .process(new CalculateTotalPacketsProcessFunction())
             .keyBy(EnrichedIntfTotalPacketsMetric::getId)
             .connect(cdcStream)
