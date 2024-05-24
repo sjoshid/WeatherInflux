@@ -9,7 +9,6 @@ import java.util.Objects;
 import java.util.UUID;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.RichMapFunction;
-import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -33,21 +32,24 @@ public class IntfTotalPacketsStreaming {
                 KafkaSources.unicastMetricKafkaSource,
                 WatermarkStrategy.noWatermarks(),
                 "UnicastMetric Kafka source")
-            .uid(UUID.randomUUID().toString());
+            .uid(UUID.randomUUID().toString())
+            .keyBy(r -> new Tuple2<String, Long>(r.getId(), r.getTimestamp()));
 
     DataStream<IntfPacketsMetric> multicastSource =
         env.fromSource(
                 KafkaSources.multicastMetricKafkaSource,
                 WatermarkStrategy.noWatermarks(),
                 "MulticastMetric Kafka source")
-            .uid(UUID.randomUUID().toString());
+            .uid(UUID.randomUUID().toString())
+            .keyBy(r -> new Tuple2<String, Long>(r.getId(), r.getTimestamp()));
 
     DataStream<IntfPacketsMetric> broadcastSource =
         env.fromSource(
                 KafkaSources.broadcastMetricKafkaSource,
                 WatermarkStrategy.noWatermarks(),
                 "BroadcastMetric Kafka source")
-            .uid(UUID.randomUUID().toString());
+            .uid(UUID.randomUUID().toString())
+            .keyBy(r -> new Tuple2<String, Long>(r.getId(), r.getTimestamp()));
 
     DataStream<Row> cdcStream =
         tableEnv
@@ -57,13 +59,6 @@ public class IntfTotalPacketsStreaming {
     DataStream<InfluxDBPoint> influxStream =
         unicastSource
             .union(multicastSource, broadcastSource)
-            .keyBy(
-                new KeySelector<IntfPacketsMetric, Tuple2<String, Long>>() {
-                  @Override
-                  public Tuple2<String, Long> getKey(IntfPacketsMetric value) throws Exception {
-                    return new Tuple2<String, Long>(value.getId(), value.getTimestamp());
-                  }
-                })
             .process(new CalculateTotalPacketsProcessFunction())
             .setParallelism(3)
             .keyBy(EnrichedIntfTotalPacketsMetric::getId)

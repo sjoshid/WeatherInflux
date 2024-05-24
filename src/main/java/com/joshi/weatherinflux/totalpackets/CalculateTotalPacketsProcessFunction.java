@@ -3,15 +3,13 @@ package com.joshi.weatherinflux.totalpackets;
 import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
+import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class CalculateTotalPacketsProcessFunction
-    extends KeyedProcessFunction<
-        Tuple2<String, Long>, IntfPacketsMetric, EnrichedIntfTotalPacketsMetric> {
+    extends ProcessFunction<IntfPacketsMetric, EnrichedIntfTotalPacketsMetric> {
 
   private static final Logger LOG =
       LoggerFactory.getLogger(CalculateTotalPacketsProcessFunction.class);
@@ -36,9 +34,7 @@ class CalculateTotalPacketsProcessFunction
   @Override
   public void processElement(
       IntfPacketsMetric value,
-      KeyedProcessFunction<Tuple2<String, Long>, IntfPacketsMetric, EnrichedIntfTotalPacketsMetric>
-              .Context
-          ctx,
+      ProcessFunction<IntfPacketsMetric, EnrichedIntfTotalPacketsMetric>.Context ctx,
       Collector<EnrichedIntfTotalPacketsMetric> out)
       throws Exception {
     Integer before = mask.value();
@@ -96,6 +92,7 @@ class CalculateTotalPacketsProcessFunction
     }
   }
 
+  @Override
   public void onTimer(
       long timestamp, OnTimerContext ctx, Collector<EnrichedIntfTotalPacketsMetric> out)
       throws Exception {
