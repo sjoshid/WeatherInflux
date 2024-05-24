@@ -71,7 +71,7 @@ public class IntfTotalPacketsStreaming {
             .process(new EnrichIntfPacketsMetrics())
             .setParallelism(3)
             .map(
-                new RichMapFunction<>() {
+                new RichMapFunction<EnrichedIntfTotalPacketsMetric, InfluxDBPoint>() {
                   @Override
                   public InfluxDBPoint map(EnrichedIntfTotalPacketsMetric value) throws Exception {
                     Map<String, String> tags = new HashMap<>();
@@ -83,12 +83,14 @@ public class IntfTotalPacketsStreaming {
                         new InfluxDBPoint("interface", value.getTimestamp(), tags, fields);
                     return point;
                   }
-                });
+                })
+            .setParallelism(3);
 
     influxStream
         .addSink(InfluxSink.influxDBConfig())
         .name("Influx Sink")
-        .uid(UUID.randomUUID().toString());
+        .uid(UUID.randomUUID().toString())
+        .setParallelism(3);
 
     env.execute("Intf Total Packets");
   }
