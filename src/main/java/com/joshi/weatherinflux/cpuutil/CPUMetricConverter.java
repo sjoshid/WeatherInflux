@@ -12,7 +12,7 @@ public class CPUMetricConverter implements DeserializationSchema<CPUMetric> {
     String og = new String(message, StandardCharsets.UTF_8);
     String[] ogTokens = og.split(",");
 
-    return new CPUMetric(ogTokens[1], Long.parseLong(ogTokens[0]), Float.parseFloat(ogTokens[2]));
+    return new CPUMetric(Long.parseLong(ogTokens[0]), ogTokens[1], Float.parseFloat(ogTokens[2]));
   }
 
   @Override

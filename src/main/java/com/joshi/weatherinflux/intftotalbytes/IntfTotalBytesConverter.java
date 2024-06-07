@@ -13,8 +13,8 @@ public class IntfTotalBytesConverter implements DeserializationSchema<IntfTotalB
     String[] ogTokens = og.split(",");
 
     return new IntfTotalBytesMetric(
-        ogTokens[1],
         Long.parseLong(ogTokens[0]),
+        ogTokens[1],
         Float.parseFloat(ogTokens[2]),
         Float.parseFloat(ogTokens[3]));
   }
