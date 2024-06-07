@@ -50,8 +50,14 @@ public class IntfTotalBytesStreaming {
                   public InfluxDBPoint map(EnrichedIntfTotalBytesMetric value) throws Exception {
                     Map<String, String> tags = new HashMap<>();
                     tags.put("id", value.getIntfTotalBytesMetric().getId());
+                    tags.put("device_id", value.getDeviceId());
+
                     Map<String, Object> fields = new HashMap<>();
-                    fields.put("maxBps", value.getMaxBps());
+                    fields.put("in_totalbytes", value.getInTotalBytes());
+                    fields.put("out_totalbytes", value.getOutTotalBytes());
+                    fields.put("in_maxbps", value.getInMaxBps());
+                    fields.put("out_maxbps", value.getOutMaxBps());
+
                     InfluxDBPoint point =
                         new InfluxDBPoint(
                             "interface",

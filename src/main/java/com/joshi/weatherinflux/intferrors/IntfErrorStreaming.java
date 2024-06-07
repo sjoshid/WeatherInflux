@@ -50,8 +50,11 @@ public class IntfErrorStreaming {
                   public InfluxDBPoint map(EnrichedIntfErrorMetric value) throws Exception {
                     Map<String, String> tags = new HashMap<>();
                     tags.put("id", value.getIntfErrorMetric().getId());
+                    tags.put("device_id", value.getDeviceId());
+
                     Map<String, Object> fields = new HashMap<>();
-                    fields.put("error", value.getIntfErrorMetric().getTemp());
+                    fields.put("in_errors", value.getIntfErrorMetric().getInErrors());
+                    fields.put("out_errors", value.getIntfErrorMetric().getOutErrors());
                     InfluxDBPoint point =
                         new InfluxDBPoint(
                             "interface", value.getIntfErrorMetric().getTimestamp(), tags, fields);

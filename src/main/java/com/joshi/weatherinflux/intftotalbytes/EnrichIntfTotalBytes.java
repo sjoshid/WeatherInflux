@@ -2,6 +2,7 @@ package com.joshi.weatherinflux.intftotalbytes;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -41,6 +42,9 @@ public class EnrichIntfTotalBytes
     if (detail != null) {
       // Output the enriched metric with inventory details.
       EnrichedIntfTotalBytesMetric enriched = new EnrichedIntfTotalBytesMetric(value);
+      String deviceId = Objects.requireNonNull(detail.getField("device_id")).toString();
+      enriched.setDeviceId(deviceId);
+
       EnrichedIntfTotalBytesMetric previousEnriched = prev.value();
       if (previousEnriched != null) {
         long prevTimestamp = previousEnriched.getIntfTotalBytesMetric().getTimestamp();
@@ -58,10 +62,27 @@ public class EnrichIntfTotalBytes
           final Duration dur =
               Duration.between(
                   Instant.ofEpochMilli(prevTimestamp), Instant.ofEpochMilli(currTimestamp));
-          float totalBytes = value.getInBytes() + value.getOutBytes();
-          float maxBps = totalBytes / dur.toSeconds();
-          enriched.setMaxBps(maxBps);
-          out.collect(enriched);
+          float inTotalBytes =
+              value.getInBytes() - previousEnriched.getIntfTotalBytesMetric().getInBytes();
+          float outTotalBytes =
+              value.getOutBytes() - previousEnriched.getIntfTotalBytesMetric().getOutBytes();
+          if (outTotalBytes >= 0. && inTotalBytes >= .0) {
+            float inMaxBps = inTotalBytes / dur.toSeconds();
+            float outMaxBps = outTotalBytes / dur.toSeconds();
+
+            enriched.setInTotalBytes(inTotalBytes);
+            enriched.setOutTotalBytes(outTotalBytes);
+            enriched.setInMaxBps(inMaxBps);
+            enriched.setOutMaxBps(outMaxBps);
+            out.collect(enriched);
+          } else {
+            LOG.error(
+                "inTotalBytes {} and outTotalBytes {} BOTH must be greater than 0. But they are NOT. Current metric {}: prev metric {}. Talk to Netreo!",
+                inTotalBytes,
+                outTotalBytes,
+                enriched.getIntfTotalBytesMetric(),
+                previousEnriched.getIntfTotalBytesMetric());
+          }
         } else {
           LOG.warn("Not possible for prev poll time to be >= curr poll time.");
         }

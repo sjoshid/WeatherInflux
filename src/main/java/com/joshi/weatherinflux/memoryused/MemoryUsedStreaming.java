@@ -49,12 +49,16 @@ public class MemoryUsedStreaming {
                   @Override
                   public InfluxDBPoint map(EnrichedMemoryUsedMetric value) throws Exception {
                     Map<String, String> tags = new HashMap<>();
-                    tags.put("id", value.getMemoryUsedMetric().getId());
+                    tags.put("device_id", value.getMemoryUsedMetric().getId());
+                    tags.put("acna", value.getAcna());
+                    tags.put("sponsored_by", value.getSponsoredBy());
+                    tags.put("country", value.getCountry());
+
                     Map<String, Object> fields = new HashMap<>();
-                    fields.put("mem_used", value.getMemoryUsedMetric().getTemp());
+                    fields.put("max_memory_used", value.getMemoryUsedMetric().getMemoryUsed());
+                    fields.put("avg_memory_used", value.getMemoryUsedMetric().getMemoryUsed());
                     InfluxDBPoint point =
-                        new InfluxDBPoint(
-                            "mem_used", value.getMemoryUsedMetric().getTimestamp(), tags, fields);
+                        new InfluxDBPoint("CPU", value.getMemoryUsedMetric().getTimestamp(), tags, fields);
                     return point;
                   }
                 });

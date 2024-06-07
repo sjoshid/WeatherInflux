@@ -8,5 +8,6 @@ import lombok.RequiredArgsConstructor;
 public class IntfDiscardMetric {
   private final long timestamp;
   private final String id;
-  private final float temp;
+  private final float inDiscards;
+  private final float outDiscards;
 }

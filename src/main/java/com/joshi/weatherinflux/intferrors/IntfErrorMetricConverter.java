@@ -12,7 +12,11 @@ public class IntfErrorMetricConverter implements DeserializationSchema<IntfError
     String og = new String(message, StandardCharsets.UTF_8);
     String[] ogTokens = og.split(",");
 
-    return new IntfErrorMetric(Long.parseLong(ogTokens[0]), ogTokens[1], Float.parseFloat(ogTokens[2]));
+    return new IntfErrorMetric(
+        Long.parseLong(ogTokens[0]),
+        ogTokens[1],
+        Float.parseFloat(ogTokens[2]),
+        Float.parseFloat(ogTokens[3]));
   }
 
   @Override

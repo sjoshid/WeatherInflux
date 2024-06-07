@@ -50,11 +50,15 @@ public class CPUUtilStreaming {
                   public InfluxDBPoint map(EnrichedCPUMetric value) throws Exception {
                     Map<String, String> tags = new HashMap<>();
                     tags.put("id", value.getCpuMetric().getId());
+                    tags.put("acna", value.getAcna());
+                    tags.put("sponsored_by", value.getSponsoredBy());
+                    tags.put("country", value.getCountry());
+
                     Map<String, Object> fields = new HashMap<>();
-                    fields.put("util", value.getCpuMetric().getTemp());
+                    fields.put("max_load", value.getCpuMetric().getUtil());
+                    fields.put("avg_load", value.getCpuMetric().getUtil());
                     InfluxDBPoint point =
-                        new InfluxDBPoint(
-                            "cpu_util", value.getCpuMetric().getTimestamp(), tags, fields);
+                        new InfluxDBPoint("device", value.getCpuMetric().getTimestamp(), tags, fields);
                     return point;
                   }
                 });

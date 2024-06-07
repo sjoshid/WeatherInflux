@@ -7,4 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EnrichedCPUMetric {
   private final CPUMetric cpuMetric;
+  private String acna;
+  private String sponsoredBy;
+  private String country;
 }

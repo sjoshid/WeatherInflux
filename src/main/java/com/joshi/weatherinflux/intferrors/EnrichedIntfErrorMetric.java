@@ -7,4 +7,5 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EnrichedIntfErrorMetric {
   private final IntfErrorMetric intfErrorMetric;
+  private String deviceId;
 }

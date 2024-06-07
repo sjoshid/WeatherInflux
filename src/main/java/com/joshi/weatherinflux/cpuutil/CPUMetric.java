@@ -8,5 +8,5 @@ import lombok.RequiredArgsConstructor;
 public class CPUMetric {
   private final long timestamp;
   private final String id;
-  private final float temp;
+  private final float util;
 }

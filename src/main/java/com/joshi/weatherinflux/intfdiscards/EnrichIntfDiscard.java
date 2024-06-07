@@ -2,6 +2,8 @@ package com.joshi.weatherinflux.intfdiscards;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
+
 import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -28,6 +30,9 @@ public class EnrichIntfDiscard
     if (detail != null) {
       // Output the enriched metric with inventory details.
       EnrichedIntfDiscardMetric enriched = new EnrichedIntfDiscardMetric(value);
+      String deviceId = Objects.requireNonNull(detail.getField("device_id")).toString();
+      enriched.setDeviceId(deviceId);
+
       EnrichedIntfDiscardMetric previousEnriched = prev.value();
       if (previousEnriched != null) {
         long prevTimestamp = previousEnriched.getIntfDiscardMetric().getTimestamp();

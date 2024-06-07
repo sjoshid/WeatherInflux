@@ -2,6 +2,8 @@ package com.joshi.weatherinflux.memoryused;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
+
 import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -28,6 +30,13 @@ public class EnrichMemoryUsed
     if (detail != null) {
       // Output the enriched metric with inventory details.
       EnrichedMemoryUsedMetric enriched = new EnrichedMemoryUsedMetric(value);
+      String acna = Objects.requireNonNull(detail.getField("inv_acna")).toString();
+      String sponsoredBy = Objects.requireNonNull(detail.getField("inv_sponsored_by")).toString();
+      String country = Objects.requireNonNull(detail.getField("inv_country")).toString();
+
+      enriched.setAcna(acna);
+      enriched.setSponsoredBy(sponsoredBy);
+      enriched.setCountry(country);
       EnrichedMemoryUsedMetric previousEnriched = prev.value();
       if (previousEnriched != null) {
         long prevTimestamp = previousEnriched.getMemoryUsedMetric().getTimestamp();

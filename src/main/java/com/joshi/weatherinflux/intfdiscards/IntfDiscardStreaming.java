@@ -50,8 +50,11 @@ public class IntfDiscardStreaming {
                   public InfluxDBPoint map(EnrichedIntfDiscardMetric value) throws Exception {
                     Map<String, String> tags = new HashMap<>();
                     tags.put("id", value.getIntfDiscardMetric().getId());
+                    tags.put("device_id", value.getDeviceId());
+
                     Map<String, Object> fields = new HashMap<>();
-                    fields.put("discard", value.getIntfDiscardMetric().getTemp());
+                    fields.put("in_discards", value.getIntfDiscardMetric().getInDiscards());
+                    fields.put("out_discards", value.getIntfDiscardMetric().getOutDiscards());
                     InfluxDBPoint point =
                         new InfluxDBPoint(
                             "interface", value.getIntfDiscardMetric().getTimestamp(), tags, fields);

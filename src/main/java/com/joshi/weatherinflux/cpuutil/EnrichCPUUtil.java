@@ -2,6 +2,7 @@ package com.joshi.weatherinflux.cpuutil;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -28,6 +29,14 @@ public class EnrichCPUUtil
     if (detail != null) {
       // Output the enriched metric with inventory details.
       EnrichedCPUMetric enriched = new EnrichedCPUMetric(value);
+      String acna = Objects.requireNonNull(detail.getField("inv_acna")).toString();
+      String sponsoredBy = Objects.requireNonNull(detail.getField("inv_sponsored_by")).toString();
+      String country = Objects.requireNonNull(detail.getField("inv_country")).toString();
+
+      enriched.setAcna(acna);
+      enriched.setSponsoredBy(sponsoredBy);
+      enriched.setCountry(country);
+
       EnrichedCPUMetric previousEnriched = prev.value();
       if (previousEnriched != null) {
         long prevTimestamp = previousEnriched.getCpuMetric().getTimestamp();

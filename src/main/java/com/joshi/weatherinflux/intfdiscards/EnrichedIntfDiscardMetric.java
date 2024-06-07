@@ -7,4 +7,5 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EnrichedIntfDiscardMetric {
   private final IntfDiscardMetric intfDiscardMetric;
+  private String deviceId;
 }
