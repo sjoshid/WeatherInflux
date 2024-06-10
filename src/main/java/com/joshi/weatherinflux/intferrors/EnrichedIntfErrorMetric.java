@@ -8,4 +8,6 @@ import lombok.RequiredArgsConstructor;
 public class EnrichedIntfErrorMetric {
   private final IntfErrorMetric intfErrorMetric;
   private String deviceId;
+  private String acna;
+  private String sponsoredBy;
 }

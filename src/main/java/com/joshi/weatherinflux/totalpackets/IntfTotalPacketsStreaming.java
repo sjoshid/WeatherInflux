@@ -54,6 +54,11 @@ public class IntfTotalPacketsStreaming {
             .toChangelogStream(tableEnv.from(CDCSources.INTERFACE_CDC_DETAILS))
             .keyBy(r -> Objects.requireNonNull(r.getField("id")).toString());
 
+    DataStream<Row> deviceCDCStream =
+        tableEnv
+            .toChangelogStream(tableEnv.from(CDCSources.DEVICE_CDC_DETAILS))
+            .keyBy(r -> Objects.requireNonNull(r.getField("id")).toString());
+
     DataStream<InfluxDBPoint> influxStream =
         unicastSource
             .union(multicastSource, broadcastSource)
@@ -70,12 +75,19 @@ public class IntfTotalPacketsStreaming {
             .connect(cdcStream)
             .process(new EnrichIntfPacketsMetrics())
             .setParallelism(3)
+            .keyBy(EnrichedIntfTotalPacketsMetric::getDeviceId)
+            .connect(deviceCDCStream)
+            .process(new EnrichIntfTotalPacketsWithDeviceDetails())
             .map(
                 new RichMapFunction<EnrichedIntfTotalPacketsMetric, InfluxDBPoint>() {
                   @Override
                   public InfluxDBPoint map(EnrichedIntfTotalPacketsMetric value) throws Exception {
                     Map<String, String> tags = new HashMap<>();
                     tags.put("id", value.getId());
+                    tags.put("device_id", value.getDeviceId());
+                    tags.put("acna", value.getAcna());
+                    tags.put("sponsored_by", value.getSponsoredBy());
+
                     Map<String, Object> fields = new HashMap<>();
                     fields.put("inTotalPackets", value.getInTotalPackets());
                     fields.put("outTotalPackets", value.getOutTotalPackets());

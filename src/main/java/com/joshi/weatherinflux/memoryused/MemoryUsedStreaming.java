@@ -33,32 +33,32 @@ public class MemoryUsedStreaming {
             // keyBy will LOGICALLY split the stream based the key. Records with same key are
             // forwarded to same slot on task manager. This forwarding ensures correct state
             // sharding.
-            .keyBy(MemoryUsedMetric::getId);
+            .keyBy(MemoryUsedMetric::getDeviceId);
 
-    DataStream<Row> memoryUsedCDCStream =
+    DataStream<Row> deviceCDCStream =
         tableEnv
             .toChangelogStream(tableEnv.from(CDCSources.DEVICE_CDC_DETAILS))
             .keyBy(r -> Objects.requireNonNull(r.getField("id")).toString());
 
     // IMPORTANT: Both streams must have same keys for them to go to same slot on task manager.
     DataStream<InfluxDBPoint> influxStream =
-        ks.connect(memoryUsedCDCStream)
+        ks.connect(deviceCDCStream)
             .process(new EnrichMemoryUsed())
             .map(
                 new RichMapFunction<>() {
                   @Override
                   public InfluxDBPoint map(EnrichedMemoryUsedMetric value) throws Exception {
                     Map<String, String> tags = new HashMap<>();
-                    tags.put("device_id", value.getMemoryUsedMetric().getId());
+                    tags.put("id", value.getDeviceId());
                     tags.put("acna", value.getAcna());
                     tags.put("sponsored_by", value.getSponsoredBy());
-                    tags.put("country", value.getCountry());
 
                     Map<String, Object> fields = new HashMap<>();
                     fields.put("max_memory_used", value.getMemoryUsedMetric().getMemoryUsed());
                     fields.put("avg_memory_used", value.getMemoryUsedMetric().getMemoryUsed());
                     InfluxDBPoint point =
-                        new InfluxDBPoint("CPU", value.getMemoryUsedMetric().getTimestamp(), tags, fields);
+                        new InfluxDBPoint(
+                            "device", value.getMemoryUsedMetric().getTimestamp(), tags, fields);
                     return point;
                   }
                 });

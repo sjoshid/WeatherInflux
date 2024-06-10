@@ -33,32 +33,32 @@ public class CPUUtilStreaming {
             // keyBy will LOGICALLY split the stream based the key. Records with same key are
             // forwarded to same slot on task manager. This forwarding ensures correct state
             // sharding.
-            .keyBy(CPUMetric::getId);
+            .keyBy(CPUMetric::getDeviceId);
 
-    DataStream<Row> cpuUtilCDCStream =
+    DataStream<Row> deviceCDCDetails =
         tableEnv
             .toChangelogStream(tableEnv.from(CDCSources.DEVICE_CDC_DETAILS))
             .keyBy(r -> Objects.requireNonNull(r.getField("id")).toString());
 
     // IMPORTANT: Both streams must have same keys for them to go to same slot on task manager.
     DataStream<InfluxDBPoint> influxStream =
-        ks.connect(cpuUtilCDCStream)
+        ks.connect(deviceCDCDetails)
             .process(new EnrichCPUUtil())
             .map(
                 new RichMapFunction<>() {
                   @Override
                   public InfluxDBPoint map(EnrichedCPUMetric value) throws Exception {
                     Map<String, String> tags = new HashMap<>();
-                    tags.put("id", value.getCpuMetric().getId());
+                    tags.put("id", value.getDeviceId());
                     tags.put("acna", value.getAcna());
                     tags.put("sponsored_by", value.getSponsoredBy());
-                    tags.put("country", value.getCountry());
 
                     Map<String, Object> fields = new HashMap<>();
-                    fields.put("max_load", value.getCpuMetric().getUtil());
-                    fields.put("avg_load", value.getCpuMetric().getUtil());
+                    fields.put("max_cpu_load", value.getCpuMetric().getUtil());
+                    fields.put("avg_cpu_load", value.getCpuMetric().getUtil());
                     InfluxDBPoint point =
-                        new InfluxDBPoint("device", value.getCpuMetric().getTimestamp(), tags, fields);
+                        new InfluxDBPoint(
+                            "device", value.getCpuMetric().getTimestamp(), tags, fields);
                     return point;
                   }
                 });

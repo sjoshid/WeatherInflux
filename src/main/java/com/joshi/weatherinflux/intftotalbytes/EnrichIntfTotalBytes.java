@@ -55,7 +55,7 @@ public class EnrichIntfTotalBytes
                     Instant.ofEpochMilli(prevTimestamp), Instant.ofEpochMilli(currTimestamp))
                 .toSeconds()
             > 15) {
-          LOG.error("Found a gap for id {}", value.getId());
+          LOG.warn("Found a gap for id {}", value.getId());
         }
 
         if (prevTimestamp < currTimestamp) {
@@ -90,7 +90,7 @@ public class EnrichIntfTotalBytes
       // sj_todo maybe it's better to split the gap finding and enriching metric part?
       prev.update(enriched);
     } else {
-      LOG.info("Metrics {} dropped because no perf data found for it", value);
+      LOG.error("Metrics {} dropped because no perf data found for it", value);
     }
   }
 
