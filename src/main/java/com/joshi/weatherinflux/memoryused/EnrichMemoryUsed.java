@@ -3,7 +3,6 @@ package com.joshi.weatherinflux.memoryused;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
-
 import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -30,10 +29,12 @@ public class EnrichMemoryUsed
     if (detail != null) {
       // Output the enriched metric with inventory details.
       EnrichedMemoryUsedMetric enriched = new EnrichedMemoryUsedMetric(value);
+      String deviceId = Objects.requireNonNull(detail.getField("id")).toString();
       String acna = Objects.requireNonNull(detail.getField("inv_acna")).toString();
       String sponsoredBy = Objects.requireNonNull(detail.getField("inv_sponsored_by")).toString();
       String country = Objects.requireNonNull(detail.getField("inv_country")).toString();
 
+      enriched.setDeviceId(deviceId);
       enriched.setAcna(acna);
       enriched.setSponsoredBy(sponsoredBy);
       enriched.setCountry(country);
@@ -47,7 +48,7 @@ public class EnrichMemoryUsed
                     Instant.ofEpochMilli(prevTimestamp), Instant.ofEpochMilli(currTimestamp))
                 .toSeconds()
             > 15) {
-          LOG.error("Found a gap for id {}", value.getId());
+          LOG.error("Found a gap for id {}", value.getDeviceId());
         }
       }
       // sj_todo maybe it's better to split the gap finding and enriching metric part?
@@ -85,6 +86,7 @@ public class EnrichMemoryUsed
     prev =
         getRuntimeContext()
             .getState(
-                new ValueStateDescriptor<>("Enriched CPU Util state", EnrichedMemoryUsedMetric.class));
+                new ValueStateDescriptor<>(
+                    "Enriched CPU Util state", EnrichedMemoryUsedMetric.class));
   }
 }

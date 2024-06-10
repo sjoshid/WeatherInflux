@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EnrichedMemoryUsedMetric {
   private final MemoryUsedMetric memoryUsedMetric;
+  private String deviceId;
   private String acna;
   private String sponsoredBy;
   private String country;

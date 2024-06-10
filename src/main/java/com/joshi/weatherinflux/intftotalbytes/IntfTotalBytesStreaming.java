@@ -40,10 +40,18 @@ public class IntfTotalBytesStreaming {
             .toChangelogStream(tableEnv.from(CDCSources.INTERFACE_CDC_DETAILS))
             .keyBy(r -> Objects.requireNonNull(r.getField("id")).toString());
 
+    DataStream<Row> deviceCDCStream =
+        tableEnv
+            .toChangelogStream(tableEnv.from(CDCSources.DEVICE_CDC_DETAILS))
+            .keyBy(r -> Objects.requireNonNull(r.getField("id")).toString());
+
     // IMPORTANT: Both streams must have same keys for them to go to same slot on task manager.
     DataStream<InfluxDBPoint> influxStream =
         ks.connect(cdcStream)
             .process(new EnrichIntfTotalBytes())
+            .keyBy(EnrichedIntfTotalBytesMetric::getDeviceId)
+            .connect(deviceCDCStream)
+            .process(new EnrichIntfTotalBytesWithDeviceDetails())
             .map(
                 new RichMapFunction<>() {
                   @Override
@@ -51,6 +59,8 @@ public class IntfTotalBytesStreaming {
                     Map<String, String> tags = new HashMap<>();
                     tags.put("id", value.getIntfTotalBytesMetric().getId());
                     tags.put("device_id", value.getDeviceId());
+                    tags.put("acna", value.getAcna());
+                    tags.put("sponsored_by", value.getSponsoredBy());
 
                     Map<String, Object> fields = new HashMap<>();
                     fields.put("in_totalbytes", value.getInTotalBytes());

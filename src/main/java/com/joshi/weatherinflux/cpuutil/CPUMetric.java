@@ -7,6 +7,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CPUMetric {
   private final long timestamp;
-  private final String id;
+  private final String deviceId;
   private final float util;
 }

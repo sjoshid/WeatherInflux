@@ -77,7 +77,7 @@ public class EnrichIntfDiscard
 
   @Override
   public void open(OpenContext openContext) throws Exception {
-    cdcRow = getRuntimeContext().getState(new ValueStateDescriptor<>("perfCDCData", Row.class));
+    cdcRow = getRuntimeContext().getState(new ValueStateDescriptor<>("Intf. CDC state", Row.class));
     prev =
         getRuntimeContext()
             .getState(
