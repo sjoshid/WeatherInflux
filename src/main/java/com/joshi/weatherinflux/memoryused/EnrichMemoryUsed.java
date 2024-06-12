@@ -17,7 +17,7 @@ public class EnrichMemoryUsed
 
   private static final Logger LOG = LoggerFactory.getLogger(EnrichMemoryUsed.class);
   private transient ValueState<Row> cdcRow;
-  private ValueState<EnrichedMemoryUsedMetric> prev;
+  private ValueState<Long> prev;
 
   @Override
   public void processElement1(
@@ -38,11 +38,10 @@ public class EnrichMemoryUsed
       enriched.setAcna(acna);
       enriched.setSponsoredBy(sponsoredBy);
       enriched.setCountry(country);
-      EnrichedMemoryUsedMetric previousEnriched = prev.value();
-      if (previousEnriched != null) {
-        long prevTimestamp = previousEnriched.getMemoryUsedMetric().getTimestamp();
-        long currTimestamp = enriched.getMemoryUsedMetric().getTimestamp();
 
+      Long prevTimestamp = prev.value();
+      long currTimestamp = enriched.getMemoryUsedMetric().getTimestamp();
+      if (prevTimestamp != null) {
         // sj_todo interval must be a SLA config.
         if (Duration.between(
                     Instant.ofEpochMilli(prevTimestamp), Instant.ofEpochMilli(currTimestamp))
@@ -52,7 +51,7 @@ public class EnrichMemoryUsed
         }
       }
       // sj_todo maybe it's better to split the gap finding and enriching metric part?
-      prev.update(enriched);
+      prev.update(currTimestamp);
       out.collect(enriched);
     } else {
       LOG.error("Metrics {} dropped because no perf data found for it", value);
@@ -87,6 +86,6 @@ public class EnrichMemoryUsed
         getRuntimeContext()
             .getState(
                 new ValueStateDescriptor<>(
-                    "Enriched CPU Util state", EnrichedMemoryUsedMetric.class));
+                    "Enriched CPU Util state", Long.class));
   }
 }
