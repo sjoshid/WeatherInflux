@@ -1,4 +1,4 @@
-package com.joshi.weatherinflux.cpuutil;
+package com.joshi.weatherinflux.memoryused;
 
 import com.joshi.weatherinflux.common.CDCSources;
 import com.joshi.weatherinflux.common.InfluxSink;
@@ -14,7 +14,7 @@ import org.apache.flink.streaming.connectors.influxdb.InfluxDBPoint;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
-public class CPUUtilStreaming {
+public class MemoryUsedStreaming {
 
   public static void main(String[] args) throws Exception {
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -25,46 +25,46 @@ public class CPUUtilStreaming {
     // parallelism of 1.
     tableEnv.getConfig().set("table.exec.resource.default-parallelism", "1");
 
-    DataStream<CPUMetric> ks =
+    DataStream<MemoryUsedMetric> ks =
         env.fromSource(
-                KafkaSources.cPUUtilKafkaSource(),
+                KafkaSources.memoryUsedKafkaSource(),
                 WatermarkStrategy.noWatermarks(),
-                "CPU util source")
+                "Memory Used source")
             // keyBy will LOGICALLY split the stream based the key. Records with same key are
             // forwarded to same slot on task manager. This forwarding ensures correct state
             // sharding.
-            .keyBy(CPUMetric::getDeviceId);
+            .keyBy(MemoryUsedMetric::getDeviceId);
 
-    DataStream<Row> deviceCDCDetails =
+    DataStream<Row> deviceCDCStream =
         tableEnv
             .toChangelogStream(tableEnv.from(CDCSources.DEVICE_CDC_DETAILS))
             .keyBy(r -> Objects.requireNonNull(r.getField("id")).toString());
 
     // IMPORTANT: Both streams must have same keys for them to go to same slot on task manager.
     DataStream<InfluxDBPoint> influxStream =
-        ks.connect(deviceCDCDetails)
-            .process(new EnrichCPUUtil())
+        ks.connect(deviceCDCStream)
+            .process(new EnrichMemoryUsed())
             .map(
                 new RichMapFunction<>() {
                   @Override
-                  public InfluxDBPoint map(EnrichedCPUMetric value) throws Exception {
+                  public InfluxDBPoint map(EnrichedMemoryUsedMetric value) throws Exception {
                     Map<String, String> tags = new HashMap<>();
                     tags.put("id", value.getDeviceId());
                     tags.put("acna", value.getAcna());
                     tags.put("sponsored_by", value.getSponsoredBy());
 
                     Map<String, Object> fields = new HashMap<>();
-                    fields.put("max_cpu_load", value.getCpuMetric().getUtil());
-                    fields.put("avg_cpu_load", value.getCpuMetric().getUtil());
+                    fields.put("max_memory_used", value.getMemoryUsedMetric().getMemoryUsed());
+                    fields.put("avg_memory_used", value.getMemoryUsedMetric().getMemoryUsed());
                     InfluxDBPoint point =
                         new InfluxDBPoint(
-                            "device", value.getCpuMetric().getTimestamp(), tags, fields);
+                            "device", value.getMemoryUsedMetric().getTimestamp(), tags, fields);
                     return point;
                   }
                 });
 
     influxStream.addSink(InfluxSink.influxDBConfig()).name("Influx Sink");
 
-    env.execute("CPU Util");
+    env.execute("Memory Used");
   }
 }

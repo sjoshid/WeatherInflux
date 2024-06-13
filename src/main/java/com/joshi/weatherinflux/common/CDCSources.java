@@ -13,6 +13,7 @@ public class CDCSources {
                   .column("nms_region", DataTypes.SMALLINT().notNull())
                   .column("nms_device_id", DataTypes.INT().notNull())
                   .column("inv_device_name", DataTypes.STRING().notNull())
+                  .column("inv_country", DataTypes.STRING().notNull())
                   .column("inv_acna", DataTypes.STRING().notNull())
                   .column("inv_sponsored_by", DataTypes.STRING().notNull())
                   .columnByExpression("t_proctime", "PROCTIME()")

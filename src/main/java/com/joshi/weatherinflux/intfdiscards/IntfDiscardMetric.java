@@ -1,13 +1,13 @@
-package com.joshi.weatherinflux.intftotalbytes;
+package com.joshi.weatherinflux.intfdiscards;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor
-public class IntfTotalBytesMetric {
+public class IntfDiscardMetric {
   private final long timestamp;
   private final String id;
-  private final float inBytes;
-  private final float outBytes;
+  private final float inDiscards;
+  private final float outDiscards;
 }

@@ -1,12 +1,12 @@
-package com.joshi.weatherinflux.cpuutil;
+package com.joshi.weatherinflux.memoryused;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor
-public class CPUMetric {
+public class MemoryUsedMetric {
   private final long timestamp;
   private final String deviceId;
-  private final float util;
+  private final float memoryUsed;
 }

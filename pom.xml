@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns="http://maven.apache.org/POM/4.0.0"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <artifactId>Flink-WeatherInflux</artifactId>
   <build>
     <plugins>
@@ -14,12 +14,12 @@
               <finalName>cpu-utils-flink-job</finalName>
               <transformers>
                 <transformer
-                  implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <!-- Replace this with the main class of your job -->
                   <mainClass>com.joshi.weatherinflux.cpuutil.CPUUtilStreaming</mainClass>
                 </transformer>
                 <transformer
-                  implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
               </transformers>
             </configuration>
             <phase>package</phase>
@@ -30,16 +30,73 @@
           </execution>
           <execution>
             <configuration>
+              <finalName>mem-used-flink-job</finalName>
+              <transformers>
+                <transformer
+                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <!-- Replace this with the main class of your job -->
+                  <mainClass>com.joshi.weatherinflux.memoryused.MemoryUsedStreaming</mainClass>
+                </transformer>
+                <transformer
+                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+              </transformers>
+            </configuration>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <id>mem-used</id>
+          </execution>
+          <execution>
+            <configuration>
+              <finalName>intf-error-flink-job</finalName>
+              <transformers>
+                <transformer
+                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <!-- Replace this with the main class of your job -->
+                  <mainClass>com.joshi.weatherinflux.intferrors.IntfErrorStreaming</mainClass>
+                </transformer>
+                <transformer
+                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+              </transformers>
+            </configuration>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <id>intf-error</id>
+          </execution>
+          <execution>
+            <configuration>
+              <finalName>intf-discard-flink-job</finalName>
+              <transformers>
+                <transformer
+                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <!-- Replace this with the main class of your job -->
+                  <mainClass>com.joshi.weatherinflux.intfdiscards.IntfDiscardStreaming</mainClass>
+                </transformer>
+                <transformer
+                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+              </transformers>
+            </configuration>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <id>intf-discard</id>
+          </execution>
+          <execution>
+            <configuration>
               <finalName>max-bps-flink-job</finalName>
               <transformers>
                 <transformer
-                  implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <!-- Replace this with the main class of your job -->
                   <mainClass>com.joshi.weatherinflux.intftotalbytes.IntfTotalBytesStreaming
                   </mainClass>
                 </transformer>
                 <transformer
-                  implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
               </transformers>
             </configuration>
             <goals>
@@ -53,13 +110,13 @@
               <finalName>total-packets-flink-job</finalName>
               <transformers>
                 <transformer
-                  implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <!-- Replace this with the main class of your job -->
                   <mainClass>com.joshi.weatherinflux.totalpackets.IntfTotalPacketsStreaming
                   </mainClass>
                 </transformer>
                 <transformer
-                  implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
               </transformers>
             </configuration>
             <goals>

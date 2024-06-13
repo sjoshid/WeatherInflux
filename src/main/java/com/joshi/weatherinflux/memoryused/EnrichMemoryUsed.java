@@ -1,4 +1,4 @@
-package com.joshi.weatherinflux.cpuutil;
+package com.joshi.weatherinflux.memoryused;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -12,23 +12,23 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class EnrichCPUUtil
-    extends KeyedCoProcessFunction<String, CPUMetric, Row, EnrichedCPUMetric> {
+public class EnrichMemoryUsed
+    extends KeyedCoProcessFunction<String, MemoryUsedMetric, Row, EnrichedMemoryUsedMetric> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(EnrichCPUUtil.class);
+  private static final Logger LOG = LoggerFactory.getLogger(EnrichMemoryUsed.class);
   private transient ValueState<Row> cdcRow;
-  private ValueState<EnrichedCPUMetric> prev;
+  private ValueState<EnrichedMemoryUsedMetric> prev;
 
   @Override
   public void processElement1(
-      CPUMetric value,
-      KeyedCoProcessFunction<String, CPUMetric, Row, EnrichedCPUMetric>.Context ctx,
-      Collector<EnrichedCPUMetric> out)
+      MemoryUsedMetric value,
+      KeyedCoProcessFunction<String, MemoryUsedMetric, Row, EnrichedMemoryUsedMetric>.Context ctx,
+      Collector<EnrichedMemoryUsedMetric> out)
       throws Exception {
     Row detail = cdcRow.value();
     if (detail != null) {
       // Output the enriched metric with inventory details.
-      EnrichedCPUMetric enriched = new EnrichedCPUMetric(value);
+      EnrichedMemoryUsedMetric enriched = new EnrichedMemoryUsedMetric(value);
       String deviceId = Objects.requireNonNull(detail.getField("id")).toString();
       String acna = Objects.requireNonNull(detail.getField("inv_acna")).toString();
       String sponsoredBy = Objects.requireNonNull(detail.getField("inv_sponsored_by")).toString();
@@ -38,11 +38,10 @@ public class EnrichCPUUtil
       enriched.setAcna(acna);
       enriched.setSponsoredBy(sponsoredBy);
       enriched.setCountry(country);
-
-      EnrichedCPUMetric previousEnriched = prev.value();
+      EnrichedMemoryUsedMetric previousEnriched = prev.value();
       if (previousEnriched != null) {
-        long prevTimestamp = previousEnriched.getCpuMetric().getTimestamp();
-        long currTimestamp = enriched.getCpuMetric().getTimestamp();
+        long prevTimestamp = previousEnriched.getMemoryUsedMetric().getTimestamp();
+        long currTimestamp = enriched.getMemoryUsedMetric().getTimestamp();
 
         // sj_todo interval must be a SLA config.
         if (Duration.between(
@@ -63,8 +62,8 @@ public class EnrichCPUUtil
   @Override
   public void processElement2(
       Row value,
-      KeyedCoProcessFunction<String, CPUMetric, Row, EnrichedCPUMetric>.Context ctx,
-      Collector<EnrichedCPUMetric> out)
+      KeyedCoProcessFunction<String, MemoryUsedMetric, Row, EnrichedMemoryUsedMetric>.Context ctx,
+      Collector<EnrichedMemoryUsedMetric> out)
       throws Exception {
     switch (value.getKind()) {
       case UPDATE_AFTER, INSERT -> {
@@ -87,6 +86,7 @@ public class EnrichCPUUtil
     prev =
         getRuntimeContext()
             .getState(
-                new ValueStateDescriptor<>("Enriched CPU Util state", EnrichedCPUMetric.class));
+                new ValueStateDescriptor<>(
+                    "Enriched CPU Util state", EnrichedMemoryUsedMetric.class));
   }
 }

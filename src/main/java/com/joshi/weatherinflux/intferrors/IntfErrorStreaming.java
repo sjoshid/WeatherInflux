@@ -1,4 +1,4 @@
-package com.joshi.weatherinflux.cpuutil;
+package com.joshi.weatherinflux.intferrors;
 
 import com.joshi.weatherinflux.common.CDCSources;
 import com.joshi.weatherinflux.common.InfluxSink;
@@ -14,7 +14,7 @@ import org.apache.flink.streaming.connectors.influxdb.InfluxDBPoint;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
-public class CPUUtilStreaming {
+public class IntfErrorStreaming {
 
   public static void main(String[] args) throws Exception {
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -25,46 +25,55 @@ public class CPUUtilStreaming {
     // parallelism of 1.
     tableEnv.getConfig().set("table.exec.resource.default-parallelism", "1");
 
-    DataStream<CPUMetric> ks =
+    DataStream<IntfErrorMetric> ks =
         env.fromSource(
-                KafkaSources.cPUUtilKafkaSource(),
+                KafkaSources.intfErrorKafkaSource(),
                 WatermarkStrategy.noWatermarks(),
-                "CPU util source")
+                "Intf Error source")
             // keyBy will LOGICALLY split the stream based the key. Records with same key are
             // forwarded to same slot on task manager. This forwarding ensures correct state
             // sharding.
-            .keyBy(CPUMetric::getDeviceId);
+            .keyBy(IntfErrorMetric::getId);
 
-    DataStream<Row> deviceCDCDetails =
+    DataStream<Row> cdcStream =
+        tableEnv
+            .toChangelogStream(tableEnv.from(CDCSources.INTERFACE_CDC_DETAILS))
+            .keyBy(r -> Objects.requireNonNull(r.getField("id")).toString());
+
+    DataStream<Row> deviceCDCStream =
         tableEnv
             .toChangelogStream(tableEnv.from(CDCSources.DEVICE_CDC_DETAILS))
             .keyBy(r -> Objects.requireNonNull(r.getField("id")).toString());
 
     // IMPORTANT: Both streams must have same keys for them to go to same slot on task manager.
     DataStream<InfluxDBPoint> influxStream =
-        ks.connect(deviceCDCDetails)
-            .process(new EnrichCPUUtil())
+        ks.connect(cdcStream)
+            .process(new EnrichIntfError())
+            .keyBy(EnrichedIntfErrorMetric::getDeviceId)
+            .connect(deviceCDCStream)
+            .process(new EnrichIntfErrorWithDeviceDetails())
             .map(
                 new RichMapFunction<>() {
                   @Override
-                  public InfluxDBPoint map(EnrichedCPUMetric value) throws Exception {
+                  public InfluxDBPoint map(EnrichedIntfErrorMetric value) throws Exception {
                     Map<String, String> tags = new HashMap<>();
-                    tags.put("id", value.getDeviceId());
+                    tags.put("id", value.getIntfErrorMetric().getId());
+                    tags.put("device_id", value.getDeviceId());
                     tags.put("acna", value.getAcna());
                     tags.put("sponsored_by", value.getSponsoredBy());
 
                     Map<String, Object> fields = new HashMap<>();
-                    fields.put("max_cpu_load", value.getCpuMetric().getUtil());
-                    fields.put("avg_cpu_load", value.getCpuMetric().getUtil());
+                    fields.put("in_errors", value.getIntfErrorMetric().getInErrors());
+                    fields.put("out_errors", value.getIntfErrorMetric().getOutErrors());
                     InfluxDBPoint point =
                         new InfluxDBPoint(
-                            "device", value.getCpuMetric().getTimestamp(), tags, fields);
+                            "interface", value.getIntfErrorMetric().getTimestamp(), tags, fields);
                     return point;
                   }
                 });
 
     influxStream.addSink(InfluxSink.influxDBConfig()).name("Influx Sink");
 
-    env.execute("CPU Util");
+    env.execute("Intf Error");
   }
 }

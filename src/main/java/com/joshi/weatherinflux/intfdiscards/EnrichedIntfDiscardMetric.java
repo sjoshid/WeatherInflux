@@ -1,14 +1,13 @@
-package com.joshi.weatherinflux.cpuutil;
+package com.joshi.weatherinflux.intfdiscards;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor
-public class EnrichedCPUMetric {
-  private final CPUMetric cpuMetric;
+public class EnrichedIntfDiscardMetric {
+  private final IntfDiscardMetric intfDiscardMetric;
   private String deviceId;
   private String acna;
   private String sponsoredBy;
-  private String country;
 }

@@ -1,12 +1,12 @@
-package com.joshi.weatherinflux.cpuutil;
+package com.joshi.weatherinflux.memoryused;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor
-public class EnrichedCPUMetric {
-  private final CPUMetric cpuMetric;
+public class EnrichedMemoryUsedMetric {
+  private final MemoryUsedMetric memoryUsedMetric;
   private String deviceId;
   private String acna;
   private String sponsoredBy;
