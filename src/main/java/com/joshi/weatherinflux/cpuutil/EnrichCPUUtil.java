@@ -17,7 +17,7 @@ public class EnrichCPUUtil
 
   private static final Logger LOG = LoggerFactory.getLogger(EnrichCPUUtil.class);
   private transient ValueState<Row> cdcRow;
-  private ValueState<EnrichedCPUMetric> prev;
+  private ValueState<Long> prev;
 
   @Override
   public void processElement1(
@@ -39,24 +39,22 @@ public class EnrichCPUUtil
       enriched.setSponsoredBy(sponsoredBy);
       enriched.setCountry(country);
 
-      EnrichedCPUMetric previousEnriched = prev.value();
-      if (previousEnriched != null) {
-        long prevTimestamp = previousEnriched.getCpuMetric().getTimestamp();
-        long currTimestamp = enriched.getCpuMetric().getTimestamp();
-
+      Long prevTimestamp = prev.value();
+      long currTimestamp = enriched.getCpuMetric().getTimestamp();
+      if (prevTimestamp != null) {
         // sj_todo interval must be a SLA config.
         if (Duration.between(
                     Instant.ofEpochMilli(prevTimestamp), Instant.ofEpochMilli(currTimestamp))
                 .toSeconds()
             > 15) {
-          LOG.error("Found a gap for id {}", value.getDeviceId());
+          LOG.warn("Found a gap for id {}", value.getDeviceId());
         }
       }
       // sj_todo maybe it's better to split the gap finding and enriching metric part?
-      prev.update(enriched);
+      prev.update(currTimestamp);
       out.collect(enriched);
     } else {
-      LOG.info("Metrics {} dropped because no perf data found for it", value);
+      LOG.error("Metrics {} dropped because no perf data found for it", value);
     }
   }
 
@@ -87,6 +85,6 @@ public class EnrichCPUUtil
     prev =
         getRuntimeContext()
             .getState(
-                new ValueStateDescriptor<>("Enriched CPU Util state", EnrichedCPUMetric.class));
+                new ValueStateDescriptor<>("Enriched CPU Util state", Long.class));
   }
 }

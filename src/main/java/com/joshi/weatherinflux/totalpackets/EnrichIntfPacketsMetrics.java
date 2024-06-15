@@ -1,5 +1,6 @@
 package com.joshi.weatherinflux.totalpackets;
 
+import java.util.Objects;
 import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -37,24 +38,31 @@ public class EnrichIntfPacketsMetrics
           ctx,
       Collector<EnrichedIntfTotalPacketsMetric> out)
       throws Exception {
-    EnrichedIntfTotalPacketsMetric prevMetric = prev.value();
-    if (prevMetric == null) {
-      // sj_todo make sure you enrich using cdc before updating.
-      prev.update(value);
-      LOG.info("First total packet metric {} which will NOT be created in Influx.", value);
+    Row detail = cdcRow.value();
+    if (detail != null) {
+      EnrichedIntfTotalPacketsMetric prevMetric = prev.value();
+      if (prevMetric == null) {
+        // sj_todo make sure you enrich using cdc before updating.
+        prev.update(value);
+        LOG.info("First total packet metric {} which will NOT be created in Influx.", value);
+      } else {
+        // sj_todo is it a good idea to create new object here?
+        EnrichedIntfTotalPacketsMetric newMetric =
+            new EnrichedIntfTotalPacketsMetric(
+                value.getId(),
+                value.getTimestamp(),
+                // IMPORTANT: Total packets is a counter that our current NMS provides.
+                // Pray that the diff is positive.
+                value.getInTotalPackets() - prevMetric.getInTotalPackets(),
+                value.getOutTotalPackets() - prevMetric.getOutTotalPackets());
+        String deviceId = Objects.requireNonNull(detail.getField("device_id")).toString();
+        newMetric.setDeviceId(deviceId);
+        LOG.info("Collected total packet metric {} for influx", newMetric);
+        out.collect(newMetric);
+        prev.update(newMetric);
+      }
     } else {
-      // sj_todo is it a good idea to create new object here?
-      EnrichedIntfTotalPacketsMetric newMetric =
-          new EnrichedIntfTotalPacketsMetric(
-              value.getId(),
-              value.getTimestamp(),
-              // IMPORTANT: Total packets is a counter that our current NMS provides.
-              // Pray that the diff is positive.
-              value.getInTotalPackets() - prevMetric.getInTotalPackets(),
-              value.getOutTotalPackets() - prevMetric.getOutTotalPackets());
-      LOG.info("Collected total packet metric {} for influx", newMetric);
-      out.collect(newMetric);
-      prev.update(newMetric);
+      LOG.error("Metrics {} dropped because no perf data found for it", value);
     }
   }
 

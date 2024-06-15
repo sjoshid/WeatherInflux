@@ -44,6 +44,7 @@ public class MemoryUsedStreaming {
     DataStream<InfluxDBPoint> influxStream =
         ks.connect(deviceCDCStream)
             .process(new EnrichMemoryUsed())
+            .setParallelism(3)
             .map(
                 new RichMapFunction<>() {
                   @Override

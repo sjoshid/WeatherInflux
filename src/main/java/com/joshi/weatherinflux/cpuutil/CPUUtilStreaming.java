@@ -44,6 +44,7 @@ public class CPUUtilStreaming {
     DataStream<InfluxDBPoint> influxStream =
         ks.connect(deviceCDCDetails)
             .process(new EnrichCPUUtil())
+            .setParallelism(3)
             .map(
                 new RichMapFunction<>() {
                   @Override
