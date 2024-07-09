@@ -65,7 +65,7 @@ class CalculateTotalPacketsProcessFunction
 
       ctx.timerService().deleteProcessingTimeTimer(timer.value());
       timer.clear();
-      LOG.info("Cleared timer. Received unicast, multicast and broadcast within 10 secs.");
+      LOG.debug("Cleared timer. Received unicast, multicast and broadcast within 10 secs.");
     } else {
       // More to come.
       if (currInTotal.value() == null) {
@@ -86,7 +86,7 @@ class CalculateTotalPacketsProcessFunction
         ctx.timerService().registerProcessingTimeTimer(futureTime);
       }
 
-      LOG.info(
+      LOG.debug(
           "Current mask {}. Unicast is 0x001, multicast is 0x010 and broadcast is 0x100.",
           mask.value());
     }

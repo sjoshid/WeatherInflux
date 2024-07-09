@@ -57,7 +57,7 @@ public class EnrichIntfPacketsMetrics
                 value.getOutTotalPackets() - prevMetric.getOutTotalPackets());
         String deviceId = Objects.requireNonNull(detail.getField("device_id")).toString();
         newMetric.setDeviceId(deviceId);
-        LOG.info("Collected total packet metric {} for influx", newMetric);
+        LOG.debug("Collected total packet metric {} for influx", newMetric);
         out.collect(newMetric);
         prev.update(newMetric);
       }

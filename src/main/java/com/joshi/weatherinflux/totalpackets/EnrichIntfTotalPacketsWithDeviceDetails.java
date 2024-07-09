@@ -33,7 +33,7 @@ public class EnrichIntfTotalPacketsWithDeviceDetails
       value.setSponsoredBy(Objects.requireNonNull(detail.getField("inv_sponsored_by")).toString());
       out.collect(value);
     } else {
-      LOG.info(
+      LOG.error(
           "Metrics dropped because no device found for interface total bytes metric {}.", value);
     }
   }
